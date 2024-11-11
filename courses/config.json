@@ -1,0 +1,12 @@
+{
+  "courses": [
+    {
+      "id": "course1",
+      "title": "Curso de Ejemplo",
+      "filePath": "course1.html",
+      "maxAccess": 5,
+      "expirationDate": "2024-12-31",
+      "accessCount": 0
+    }
+  ]
+}
