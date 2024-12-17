@@ -7,6 +7,22 @@
       "maxAccess": 5,
       "expirationDate": "2024-12-31",
       "accessCount": 0
+    },
+    {
+      "id": "course2",
+      "title": "Curso de Ejemplo 2",
+      "filePath": "course2.html",
+      "maxAccess": 5,
+      "expirationDate": "2024-12-31",
+      "accessCount": 6
+    },
+    {
+      "id": "course3",
+      "title": "Curso de Ejemplo 3",
+      "filePath": "course3.html",
+      "maxAccess": 5,
+      "expirationDate": "2024-12-31",
+      "accessCount": 0
     }
   ]
 }
