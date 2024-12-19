@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Required elements not found")
     return
   }
-
   // Cargar lista de cursos
   window.courseAPI.listCourses().then((response) => {
     if (response.success && response.courses) {
@@ -58,12 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
         btnCourse.addEventListener("click", async () => {
           const result = await window.courseAPI.getCourseContent(course.id)
           if (result.success && result.content) {
-            // viewer.innerHTML = result.content
-            console.log(result.content)
+            await window.courseAPI.openCourseContent(result.content)
           } else {
-            // viewer.innerHTML = `<div class="error">${
-            //   result.error || "Error desconocido"
-            // }</div>`
             console.log(result.error || "Error desconocido")
           }
         })

@@ -1,3 +1,4 @@
+require("dotenv").config()
 import { app, BrowserWindow, ipcMain } from "electron"
 import * as path from "path"
 import { AuthService } from "./services/authService"
@@ -15,11 +16,11 @@ class MainApp {
 
   async init() {
     await app.whenReady()
-    this.createWindow()
+    this.createWindow(path.join("renderer", "index.html"))
     this.setupIPC()
   }
 
-  private createWindow() {
+  private createWindow(viewFilePath: string) {
     this.mainWindow = new BrowserWindow({
       width: 1200,
       height: 800,
@@ -30,7 +31,7 @@ class MainApp {
       },
     })
 
-    const indexPath = path.join(__dirname, "..", "renderer", "index.html")
+    const indexPath = path.join(__dirname, "..", viewFilePath)
     console.log("Loading index from:", indexPath)
 
     this.mainWindow.loadFile(indexPath).catch((err) => {
@@ -41,6 +42,15 @@ class MainApp {
     if (process.env.NODE_ENV === "development") {
       this.mainWindow.webContents.openDevTools()
     }
+  }
+
+  private changeViewWindow(viewPath: string): void {
+    const viewFilePath = path.join(__dirname, "..", viewPath)
+    console.log("Loading template from:", viewFilePath)
+
+    this.mainWindow?.loadFile(viewFilePath).catch((err) => {
+      console.error(`Error loading ${viewPath}`, err)
+    })
   }
 
   private setupIPC() {
@@ -66,6 +76,30 @@ class MainApp {
           content: result.content,
           error: result.error,
         }
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          return { success: false, error: error.message }
+        }
+        return { success: false, error: "An unknown error occurred" }
+      }
+    })
+
+    // Escuchar mensajes desde el render process
+    ipcMain.handle("course:openContent", (event, courseFilePath) => {
+      try {
+        this.createWindow(path.join("courses", courseFilePath))
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          return { success: false, error: error.message }
+        }
+        return { success: false, error: "An unknown error occurred" }
+      }
+    })
+
+    // Ir a la vista
+    ipcMain.handle("navigation:goToView", (event, viewPath) => {
+      try {
+        this.changeViewWindow(viewPath)
       } catch (error: unknown) {
         if (error instanceof Error) {
           return { success: false, error: error.message }

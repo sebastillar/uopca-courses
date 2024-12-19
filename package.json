@@ -6,13 +6,14 @@
     "start": "electron .",
     "build": "tsc && npm run copy-assets",
     "copy-assets": "copyfiles -u 1 \"src/assets/**/*\" dist/ && npm run copy-files",
-    "copy-files": "copyfiles -u 1 src/renderer/index.html dist/ && copyfiles -u 1 \"courses/**/*\" dist/ && npm run build-css",
+    "copy-files": "copyfiles -u 1 \"src/renderer/**/*.html\" dist/ && copyfiles -u 1 \"courses/**/*\" dist/courses && npm run build-css",
     "build-css": "npx tailwindcss -i ./src/renderer/input.css -o ./dist/renderer/output.css",
     "dev": "npm run build && npm start"
   },
   "dependencies": {
     "@types/axios": "^0.14.4",
     "axios": "^1.7.7",
+    "dotenv": "^16.4.7",
     "electron": "^22.0.0",
     "electron-store": "^8.1.0"
   },
