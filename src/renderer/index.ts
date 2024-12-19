@@ -58,6 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const result = await window.courseAPI.getCourseContent(course.id)
           if (result.success && result.content) {
             await window.courseAPI.openCourseContent(result.content)
+            window.electronAPI.onCourseWindowCreated()
           } else {
             console.log(result.error || "Error desconocido")
           }

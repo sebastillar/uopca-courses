@@ -26,11 +26,13 @@ contextBridge.exposeInMainWorld("courseAPI", {
 
 interface ElectronAPI {
   goToView: (viewPath: string) => void
+  onCourseWindowCreated: () => void
 }
 
 contextBridge.exposeInMainWorld("electronAPI", {
   goToView: (viewPath: string) =>
     ipcRenderer.invoke("navigation:goToView", viewPath),
+  onCourseWindowCreated: () => ipcRenderer.invoke("navigation:courseOpened"),
 } as ElectronAPI)
 
 // Declaración global para TypeScript
