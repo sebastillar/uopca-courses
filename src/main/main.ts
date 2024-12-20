@@ -29,6 +29,7 @@ class MainApp {
         nodeIntegration: false,
         preload: path.join(__dirname, "preload.js"),
       },
+      icon: path.join(__dirname, "..", "assets", "uopca-logo.png"),
     })
 
     const indexPath = path.join(__dirname, "..", "renderer", "index.html")
@@ -45,6 +46,49 @@ class MainApp {
   }
 
   private createCourseWindow(viewFilePath: string) {
+    const courseWindow = new BrowserWindow({
+      width: 1200,
+      height: 800,
+      parent: this.mainWindow ?? undefined,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        preload: path.join(__dirname, "preload.js"),
+      },
+      icon: path.join(__dirname, "..", "assets", "uopca-logo.png"),
+    })
+
+    const indexPath = path.join(__dirname, "..", viewFilePath)
+    console.log("Loading index from:", indexPath)
+
+    courseWindow.loadFile(indexPath).catch((err) => {
+      console.error("Error loading index.html:", err)
+    })
+
+    this.changeMainWindow("renderer/courseOpen.html")
+
+    courseWindow.on("close", (e) => {
+      const choice = require("electron").dialog.showMessageBoxSync(
+        courseWindow,
+        {
+          type: "question",
+          buttons: ["Mantenerse en el curso", "Salir del curso"],
+          defaultId: 0,
+          title: "Salir del curso",
+          message: "¿Deseas salir del curso actual?",
+          detail: "Si sales del curso se terminará esta visualización",
+          icon: path.join(__dirname, "..", "assets", "uopca-logo.png"),
+        }
+      )
+      if (choice === 0) {
+        e.preventDefault()
+      } else {
+        this.changeMainWindow("renderer/index.html")
+      }
+    })
+  }
+
+  private openCourseWindow(viewFilePath: string) {
     if (!this.mainWindow) {
       throw new Error("Main window is not initialized")
     }
@@ -57,53 +101,15 @@ class MainApp {
         title: "Abrir curso",
         message: "Consumir una visualización",
         detail: "Al abrir un curso se consumirá una visualización",
+        icon: path.join(__dirname, "..", "assets", "uopca-logo.png"),
       }
     )
 
     if (choice === 1) {
-      return
+      return false
+    } else {
+      return true
     }
-
-    const courseWindow = new BrowserWindow({
-      width: 1200,
-      height: 800,
-      parent: this.mainWindow ?? undefined,
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        preload: path.join(__dirname, "preload.js"),
-      },
-    })
-
-    this.mainWindow?.webContents.send("navigation:courseOpened", {
-      windowId: courseWindow.id,
-    })
-
-    const indexPath = path.join(__dirname, "..", viewFilePath)
-    console.log("Loading index from:", indexPath)
-
-    courseWindow.loadFile(indexPath).catch((err) => {
-      console.error("Error loading index.html:", err)
-    })
-
-    courseWindow.on("close", (e) => {
-      const choice = require("electron").dialog.showMessageBoxSync(
-        courseWindow,
-        {
-          type: "question",
-          buttons: ["Mantenerse en el curso", "Salir del curso"],
-          defaultId: 0,
-          title: "Salir del curso",
-          message: "¿Deseas salir del curso actual?",
-          detail: "Si sales del curso se terminará esta visualización",
-        }
-      )
-      if (choice === 0) {
-        e.preventDefault()
-      } else {
-        this.changeMainWindow("renderer/index.html")
-      }
-    })
   }
 
   private changeMainWindow(viewPath: string): void {
@@ -170,8 +176,30 @@ class MainApp {
       }
     })
 
-    ipcMain.handle("navigation:courseOpened", (event, data) => {
-      this.changeMainWindow("renderer/courseOpen.html")
+    // Validar acceso al curso
+    ipcMain.handle("course:validateAccess", async (event, courseId) => {
+      try {
+        const allowed = await this.courseManager.canAccessCourse(courseId)
+        const result = this.openCourseWindow(courseId)
+        if (allowed.canAccess && !result) {
+          return {
+            success: false,
+            canAccess: allowed.canAccess,
+            reason: "El usuario canceló la visualización",
+          }
+        }
+        return {
+          success: result,
+          canAccess: allowed.canAccess,
+          reason: allowed.reason,
+        }
+      } catch (error: unknown) {
+        return {
+          success: false,
+          canAccess: false,
+          error: "An unknown error occurred",
+        }
+      }
     })
   }
 }

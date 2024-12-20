@@ -55,12 +55,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         btnCourse.addEventListener("click", async () => {
-          const result = await window.courseAPI.getCourseContent(course.id)
-          if (result.success && result.content) {
-            await window.courseAPI.openCourseContent(result.content)
-            window.electronAPI.onCourseWindowCreated()
+          const canOpen = await window.courseAPI.validateAccess(course.id)
+          if (canOpen.success && canOpen.canAccess) {
+            const result = await window.courseAPI.getCourseContent(course.id)
+            if (result.success && result.content) {
+              await window.courseAPI.openCourseContent(result.content)
+            } else {
+              console.log(result.error || "Error desconocido")
+            }
           } else {
-            console.log(result.error || "Error desconocido")
+            console.log("No se puede acceder al curso, razón:", canOpen.reason)
           }
         })
       })

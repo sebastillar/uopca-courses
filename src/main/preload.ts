@@ -13,6 +13,13 @@ interface CourseAPI {
     error?: string
   }>
   openCourseContent: (courseFilePath: any) => Promise<void>
+
+  validateAccess: (courseId: string) => Promise<{
+    success: boolean
+    canAccess: boolean
+    reason?: string
+    error?: string
+  }>
 }
 
 // Exponer el API
@@ -22,17 +29,17 @@ contextBridge.exposeInMainWorld("courseAPI", {
     ipcRenderer.invoke("course:getContent", courseId),
   openCourseContent: (courseFilePath: string) =>
     ipcRenderer.invoke("course:openContent", courseFilePath),
+  validateAccess: (courseId: string) =>
+    ipcRenderer.invoke("course:validateAccess", courseId),
 } as CourseAPI)
 
 interface ElectronAPI {
   goToView: (viewPath: string) => void
-  onCourseWindowCreated: () => void
 }
 
 contextBridge.exposeInMainWorld("electronAPI", {
   goToView: (viewPath: string) =>
     ipcRenderer.invoke("navigation:goToView", viewPath),
-  onCourseWindowCreated: () => ipcRenderer.invoke("navigation:courseOpened"),
 } as ElectronAPI)
 
 // Declaración global para TypeScript
