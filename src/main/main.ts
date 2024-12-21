@@ -3,6 +3,7 @@ import { app, BrowserWindow, ipcMain } from "electron"
 import * as path from "path"
 import { AuthService } from "./services/authService"
 import { CourseManager } from "./services/courseManager"
+import { exitCourseModal, openCourseModal } from "./config/modals"
 
 class MainApp {
   private mainWindow: BrowserWindow | null = null
@@ -45,7 +46,7 @@ class MainApp {
     }
   }
 
-  private createCourseWindow(viewFilePath: string) {
+  private createCourseWindow(viewFilePath: string, courseId: string) {
     const courseWindow = new BrowserWindow({
       width: 1200,
       height: 800,
@@ -58,57 +59,66 @@ class MainApp {
       icon: path.join(__dirname, "..", "assets", "uopca-logo.png"),
     })
 
-    const indexPath = path.join(__dirname, "..", viewFilePath)
-    console.log("Loading index from:", indexPath)
+    this.courseManager.setWindowId(courseId, courseWindow.id)
 
-    courseWindow.loadFile(indexPath).catch((err) => {
+    const coursePath = path.join(__dirname, "..", viewFilePath)
+    console.log("Loading index from:", coursePath)
+
+    courseWindow.loadFile(coursePath).catch((err) => {
       console.error("Error loading index.html:", err)
     })
 
-    this.changeMainWindow("renderer/courseOpen.html")
+    // this.changeMainWindow("renderer/courseOpen.html")
+    this.mainWindow?.webContents.reload()
 
-    courseWindow.on("close", (e) => {
+    courseWindow.on("close", async (e) => {
       const choice = require("electron").dialog.showMessageBoxSync(
         courseWindow,
-        {
-          type: "question",
-          buttons: ["Mantenerse en el curso", "Salir del curso"],
-          defaultId: 0,
-          title: "Salir del curso",
-          message: "¿Deseas salir del curso actual?",
-          detail: "Si sales del curso se terminará esta visualización",
-          icon: path.join(__dirname, "..", "assets", "uopca-logo.png"),
-        }
+        exitCourseModal
       )
       if (choice === 0) {
         e.preventDefault()
       } else {
-        this.changeMainWindow("renderer/index.html")
+        await this.courseManager.changeStatus(courseId)
+        this.mainWindow?.webContents.reload()
       }
     })
   }
 
-  private openCourseWindow(viewFilePath: string) {
+  private openCourseWindow() {
     if (!this.mainWindow) {
       throw new Error("Main window is not initialized")
     }
     const choice = require("electron").dialog.showMessageBoxSync(
       this.mainWindow,
-      {
-        type: "question",
-        buttons: ["Continuar", "Cancelar"],
-        defaultId: 0,
-        title: "Abrir curso",
-        message: "Consumir una visualización",
-        detail: "Al abrir un curso se consumirá una visualización",
-        icon: path.join(__dirname, "..", "assets", "uopca-logo.png"),
-      }
+      openCourseModal
     )
 
     if (choice === 1) {
       return false
     } else {
       return true
+    }
+  }
+
+  private closeCourseWindow(windowId: number) {
+    try {
+      const windows = BrowserWindow.getAllWindows()
+      const courseWindow = windows.find((window) => window.id === windowId)
+
+      if (!courseWindow) {
+        return { success: false, error: "Course window not found" }
+      }
+
+      // La logica de cerrar la ventana del curso se maneja en el evento close
+      courseWindow.close()
+
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      }
     }
   }
 
@@ -141,7 +151,7 @@ class MainApp {
         const result = await this.courseManager.readCourseContent(courseId)
         return {
           success: !result.error,
-          content: result.content,
+          course: result.course,
           error: result.error,
         }
       } catch (error: unknown) {
@@ -153,9 +163,13 @@ class MainApp {
     })
 
     // Escuchar mensajes desde el render process
-    ipcMain.handle("course:openContent", (event, courseFilePath) => {
+    ipcMain.handle("course:openContent", (event, course) => {
       try {
-        this.createCourseWindow(path.join("courses", courseFilePath))
+        this.createCourseWindow(
+          path.join("courses", course.filePath),
+          course.id
+        )
+        return { success: true }
       } catch (error: unknown) {
         if (error instanceof Error) {
           return { success: false, error: error.message }
@@ -180,7 +194,7 @@ class MainApp {
     ipcMain.handle("course:validateAccess", async (event, courseId) => {
       try {
         const allowed = await this.courseManager.canAccessCourse(courseId)
-        const result = this.openCourseWindow(courseId)
+        const result = this.openCourseWindow()
         if (allowed.canAccess && !result) {
           return {
             success: false,
@@ -200,6 +214,16 @@ class MainApp {
           error: "An unknown error occurred",
         }
       }
+    })
+
+    // Cambiar estado del curso
+    ipcMain.handle("course:changeStatus", async (event, courseId) => {
+      await this.courseManager.changeStatus(courseId)
+    })
+
+    // Cerrar ventana del curso
+    ipcMain.handle("course:closeWindow", async (event, windowId) => {
+      return this.closeCourseWindow(windowId)
     })
   }
 }

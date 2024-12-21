@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="text-gray-900 font-bold text-xl mb-2">${
                 course.title
               }</div>
-              <p class="text-gray-700 text-base">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptatibus quia, nulla! Maiores et perferendis eaque, exercitationem praesentium nihil.</p>
+              <p class="text-gray-700 text-base">${course.description}</p>
             </div>
             <div class="flex items-center">
               <div class="text-sm">
@@ -38,10 +38,19 @@ document.addEventListener("DOMContentLoaded", () => {
                   course.expirationDate
                 ).toLocaleDateString()}</p>
               </div>
-              <button id="btnCourse${
-                course.id
-              }" class="open-course-btn bg-orange-600 text-white py-1 px-3 rounded mt-2 ml-auto">Abrir curso</button>
-            </div>
+              ${
+                course.open
+                  ? ""
+                  : `<button id="btnCourse${course.id}" class="open-course-btn bg-orange-600 text-white py-1 px-3 rounded mt-2 ml-auto">Abrir curso</button>`
+              }
+              ${
+                course.open
+                  ? `
+                <button id="btnClose${course.id}" class="delete-course-btn bg-red-600 text-white py-1 px-3 rounded mt-2 ml-auto">Cerrar curso</button>
+              `
+                  : ""
+              }
+              </div>
           </div>
         `
 
@@ -49,24 +58,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const btnCourse = document.getElementById(`btnCourse${course.id}`)
 
-        if (!btnCourse) {
-          console.error("Button not found")
-          return courseElement
+        if (btnCourse) {
+          btnCourse.addEventListener("click", async () => {
+            const canOpen = await window.courseAPI.validateAccess(course.id)
+
+            if (canOpen.success && canOpen.canAccess) {
+              const result = await window.courseAPI.getCourseContent(course.id)
+
+              if (result.success && result.course) {
+                await window.courseAPI.openCourseContent(result.course)
+                await window.courseAPI.changeStatus(course.id)
+              } else {
+                console.log(result.error || "Error desconocido")
+              }
+            } else {
+              console.log(
+                "No se puede acceder al curso, razón:",
+                canOpen.reason
+              )
+            }
+          })
         }
 
-        btnCourse.addEventListener("click", async () => {
-          const canOpen = await window.courseAPI.validateAccess(course.id)
-          if (canOpen.success && canOpen.canAccess) {
-            const result = await window.courseAPI.getCourseContent(course.id)
-            if (result.success && result.content) {
-              await window.courseAPI.openCourseContent(result.content)
-            } else {
-              console.log(result.error || "Error desconocido")
+        const btnClose = document.getElementById(`btnClose${course.id}`)
+        if (btnClose) {
+          btnClose.addEventListener("click", async () => {
+            if (!course.windowId) {
+              console.error("Window ID not found")
+              return
             }
-          } else {
-            console.log("No se puede acceder al curso, razón:", canOpen.reason)
-          }
-        })
+            await window.courseAPI.closeCourseWindow(course.windowId, course.id)
+          })
+        }
       })
     }
   })

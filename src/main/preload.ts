@@ -1,41 +1,20 @@
 import { contextBridge, ipcRenderer } from "electron"
-import { Course } from "../shared/types"
-
-interface CourseAPI {
-  listCourses: () => Promise<{
-    success: boolean
-    courses?: Course[]
-    error?: string
-  }>
-  getCourseContent: (courseId: string) => Promise<{
-    success: boolean
-    content?: string
-    error?: string
-  }>
-  openCourseContent: (courseFilePath: any) => Promise<void>
-
-  validateAccess: (courseId: string) => Promise<{
-    success: boolean
-    canAccess: boolean
-    reason?: string
-    error?: string
-  }>
-}
+import { Course, CourseAPI, ElectronAPI } from "../shared/types"
 
 // Exponer el API
 contextBridge.exposeInMainWorld("courseAPI", {
   listCourses: () => ipcRenderer.invoke("course:list"),
   getCourseContent: (courseId: string) =>
     ipcRenderer.invoke("course:getContent", courseId),
-  openCourseContent: (courseFilePath: string) =>
-    ipcRenderer.invoke("course:openContent", courseFilePath),
+  openCourseContent: (course: Course) =>
+    ipcRenderer.invoke("course:openContent", course),
   validateAccess: (courseId: string) =>
     ipcRenderer.invoke("course:validateAccess", courseId),
+  changeStatus: (courseId: string) =>
+    ipcRenderer.invoke("course:changeStatus", courseId),
+  closeCourseWindow: (windowId: number) =>
+    ipcRenderer.invoke("course:closeWindow", windowId),
 } as CourseAPI)
-
-interface ElectronAPI {
-  goToView: (viewPath: string) => void
-}
 
 contextBridge.exposeInMainWorld("electronAPI", {
   goToView: (viewPath: string) =>

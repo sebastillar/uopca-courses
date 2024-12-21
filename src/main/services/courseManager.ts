@@ -75,7 +75,7 @@ export class CourseManager {
   }
 
   async readCourseContent(courseId: string): Promise<{
-    content?: string
+    course?: Course
     error?: string
   }> {
     try {
@@ -105,12 +105,26 @@ export class CourseManager {
       this.store.set("courses", courses)
 
       // Leer y devolver contenido
-      return { content: course.filePath }
+      return { course }
       // const content = fs.readFileSync(filePath, 'utf8');
       // return { content };
     } catch (error) {
       console.error("Error reading course:", error)
       return { error: "Error al leer el curso" }
     }
+  }
+
+  async changeStatus(courseId: string): Promise<void> {
+    const courses = this.getCourses()
+    const courseIndex = courses.findIndex((c) => c.id === courseId)
+    courses[courseIndex].open = !courses[courseIndex].open
+    this.store.set("courses", courses)
+  }
+
+  async setWindowId(courseId: string, windowId: number): Promise<void> {
+    const courses = this.getCourses()
+    const courseIndex = courses.findIndex((c) => c.id === courseId)
+    courses[courseIndex].windowId = windowId
+    this.store.set("courses", courses)
   }
 }
