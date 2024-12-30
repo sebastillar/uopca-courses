@@ -3,31 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <title>UOPCA Courses</title>
-    <style>
-      .course-list {
-        margin: 20px;
-      }
-      .course-item {
-        padding: 10px;
-        margin: 10px 0;
-        border: 1px solid #ccc;
-        cursor: pointer;
-      }
-      .viewer {
-        margin: 20px;
-        padding: 20px;
-        border: 1px solid #eee;
-      }
-      .error {
-        color: red;
-        padding: 10px;
-      }
-    </style>
+    <link href="./output.css" rel="stylesheet" />
+    <script src="./components/Header.js" type="module"></script>
+    <!-- <script src="./components/CourseCard.js" type="module"></script> -->
   </head>
   <body>
-    <div id="root">
-      <h1>Mis Cursos</h1>
-      <div id="courseList" class="course-list"></div>
+    <app-header></app-header>
+    <div id="root" class="text-center">
+      <h1 class="text-3xl font-bold mb-4 mt-4">
+        Mis <span class="text-orange-600">Cursos</span>
+      </h1>
+      <div id="courseList" class="course-list mx-auto w-4/5"></div>
       <div id="viewer" class="viewer"></div>
     </div>
     <script src="./index.js"></script>

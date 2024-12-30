@@ -2,8 +2,27 @@
   "courses": [
     {
       "id": "course1",
-      "title": "Curso de Ejemplo",
+      "title": "Apiladores",
+      "description": "Capacitación integral para el manejo de apiladores eléctricos y manuales, enfocada en maximizar la productividad en almacenes y centros de distribución.",
       "filePath": "course1.html",
+      "maxAccess": 5,
+      "expirationDate": "2024-12-31",
+      "accessCount": 0
+    },
+    {
+      "id": "course2",
+      "title": "Montacargas",
+      "description": "Aprenda a operar montacargas de forma segura y eficiente, con módulos que cubren desde los fundamentos hasta técnicas avanzadas.",
+      "filePath": "course2.html",
+      "maxAccess": 5,
+      "expirationDate": "2024-12-31",
+      "accessCount": 3
+    },
+    {
+      "id": "course3",
+      "title": "Manipuladores Telescópicos",
+      "description": "Domine el control de manipuladores telescópicos con formación especializada que abarca su uso en diferentes industrias y aplicaciones.",
+      "filePath": "course3.html",
       "maxAccess": 5,
       "expirationDate": "2024-12-31",
       "accessCount": 0
